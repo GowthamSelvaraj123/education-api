@@ -1,38 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Education API - Documentation</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 40px auto;
-      max-width: 900px;
-      padding: 0 20px;
-      line-height: 1.6;
-      color: #333;
-      background-color: #fafafa;
-    }
-    h1, h2, h3 {
-      color: #2c3e50;
-    }
-    code {
-      background-color: #eee;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-    pre {
-      background: #f4f4f4;
-      padding: 10px;
-      overflow-x: auto;
-    }
-    hr {
-      border: 1px solid #ddd;
-    }
-  </style>
-</head>
-<body>
-
   <h1>🎓 Education API</h1>
   <p>A RESTful API for an online education platform built with <strong>Node.js</strong>, <strong>Express</strong>, and <strong>MongoDB</strong>.</p>
 
@@ -109,6 +74,3 @@ npm run dev
 
   <h2>👨‍💻 Author</h2>
   <p>Gowtham — <a href="https://github.com/gowthamdeveloper" target="_blank">GitHub Profile</a></p>
-
-</body>
-</html>
