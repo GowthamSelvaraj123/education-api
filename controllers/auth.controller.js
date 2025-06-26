@@ -1,7 +1,9 @@
 const User = require("../models/user.model");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const SECRET_KEY = process.env.JWT_SECRET || "Color@123";
+const nodemailer = require('nodemailer');
 const registerController = async (req, res) => {
     try {
         const { name, email, password, phone, newaddress, roles } = req.body;
@@ -57,21 +59,83 @@ const loginController = async (req, res) => {
     }
 }
 const resetPasswordController = async (req, res) => {
-    try{
+    try {
+        const { token, newPassword } = req.body;
 
+        if (!token || !newPassword) {
+            return res.status(400).json({ success: false, message: "Token and new password are required." });
+        }
+
+        const user = await User.findOne({
+            resetToken: token,
+            resetTokenExpiration: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Invalid or expired token." });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        user.resetToken = undefined;
+        user.resetTokenExpiration = undefined;
+        await user.save();
+
+        res.status(200).json({ success: true, message: "Password has been reset successfully." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Server error." });
     }
-    catch(err)
-    {
-
+};
+const forgotPasswordController = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Email is required." });
+        }
+        const user = await User.findOne({ email: email.toLowerCase().trim() });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found." });
+        }
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        const tokenExpiration = Date.now() + 3600000;
+        user.resetToken = resetToken;
+        user.resetTokenExpiration = tokenExpiration;
+        await user.save();
+        const resetLink = `http://localhost:5000/api/auth/reset-password/${resetToken}`;
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.SMTP_EMAIL,
+                pass: process.env.SMTP_PASSWORD,
+            },
+        });
+        const mailOptions = {
+            from: `"Support Team" <${process.env.SMTP_EMAIL}>`,
+            to: user.email,
+            subject: "Password Reset Request",
+            html: `
+                <p>Hello ${user.name || "User"},</p>
+                <p>You requested a password reset. Click the link below to reset your password:</p>
+                <a href="${resetLink}">${resetLink}</a>
+                <p>This link will expire in 1 hour.</p>
+                <p>If you did not request this, you can ignore this email.</p>
+                <br>
+                <p>Thanks,<br/>Your Team</p>
+            `
+        };
+        await transporter.sendMail(mailOptions);
+        res.status(200).json({ success: true, message: "Password reset link sent to your email." });
+    }
+    catch (err) {
+        console.log(err);
+        res.status(500).json({ success: false, message: "Server error. Please try again later." })
     }
 }
-const forgotPasswordController = async(req, res) => {
-    try{
 
-    }
-    catch(err)
-    {
-
-    }
+const logoutController = async(req, res) => {
+    req.logout(() => {
+        res.status(200).json({ success: true, message: "Logged out successfully" });
+    });
 }
-module.exports = { loginController, registerController };
+module.exports = { loginController, registerController, forgotPasswordController, resetPasswordController, logoutController };
